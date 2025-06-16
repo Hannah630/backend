@@ -1,17 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const emailjs = require('@emailjs/nodejs'); // ← 加這個
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { name, phone, email, address, total, items } = req.body;
 
-  if (!name || !phone || !email || !address || !total || !items) {
-    return res.status(400).json({ error: '缺少必要欄位' });
+  try {
+    await emailjs.send(
+      process.env.EMAILJS_SERVICE_ID,
+      process.env.EMAILJS_TEMPLATE_ID,
+      { name, phone, email, address, total, items },
+      { publicKey: process.env.EMAILJS_PUBLIC_KEY, privateKey: process.env.EMAILJS_PRIVATE_KEY }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('EmailJS 發送失敗：', err);
+    res.status(500).json({ error: '寄信失敗' });
   }
-
-  console.log('📦 接收到訂單：', req.body);
-
-  // 將來可寫入資料庫
-  res.status(200).json({ message: '訂單接收成功' });
 });
 
 module.exports = router;
